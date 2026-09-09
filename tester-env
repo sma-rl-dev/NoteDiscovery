@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+RUN_ID="${RUN_ID:-}"
+PORT="${PORT:-8115}"
+IMAGE_NAME="${IMAGE_TAG:-tester-env-notediscovery:dev}"
+RUN_SUFFIX="${RUN_ID:+-$RUN_ID}"
+PROJECT="tester-env-notediscovery${RUN_SUFFIX}"
+COMPOSE=(docker compose -p "$PROJECT" -f "$SCRIPT_DIR/docker-compose.yml" -f "$SCRIPT_DIR/docker-compose.tester-env.yml")
+
+usage() {
+  cat <<'EOF'
+Usage: ./tester-env <deploy|reset|seed|verify|stop|status|logs|help> [--run-id ID] [--port PORT]
+Environment: IMAGE_TAG (image name), RUN_ID (container/volume suffix), PORT (host port).
+EOF
+}
+
+while (($#)); do
+  case "$1" in
+    deploy|reset|seed|verify|stop|status|logs|help) COMMAND="$1" ;;
+    --run-id) RUN_ID="$2"; RUN_SUFFIX="-$2"; PROJECT="tester-env-notediscovery$RUN_SUFFIX"; COMPOSE=(docker compose -p "$PROJECT" -f "$SCRIPT_DIR/docker-compose.yml" -f "$SCRIPT_DIR/docker-compose.tester-env.yml"); shift ;;
+    --port) PORT="$2"; shift ;;
+    *) usage; exit 2 ;;
+  esac
+  shift
+done
+
+export IMAGE_NAME RUN_SUFFIX HOST_PORT="$PORT"
+URL="http://localhost:$PORT"
+
+case "${COMMAND:-help}" in
+  deploy)
+    printf '==> building source image %s\n' "$IMAGE_NAME"
+    "${COMPOSE[@]}" up --build --detach
+    for _ in {1..30}; do
+      if python3 -c "import urllib.request; urllib.request.urlopen('$URL/health', timeout=2)" 2>/dev/null; then
+        printf '==> ready at %s\n' "$URL"
+        exit 0
+      fi
+      sleep 1
+    done
+    printf '==> app did not become healthy\n' >&2
+    exit 1
+    ;;
+  seed|verify)
+    python3 "$SCRIPT_DIR/tester-env-seed.py" "$COMMAND" --url "$URL"
+    ;;
+  reset)
+    printf '==> removing only %s containers and volume\n' "$PROJECT"
+    "${COMPOSE[@]}" down --volumes --remove-orphans
+    ;;
+  stop) "${COMPOSE[@]}" stop ;;
+  status) "${COMPOSE[@]}" ps; printf '==> URL %s\n' "$URL" ;;
+  logs) "${COMPOSE[@]}" logs --tail=200 ;;
+  help) usage ;;
+esac

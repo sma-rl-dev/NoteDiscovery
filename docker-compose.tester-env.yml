@@ -1,0 +1,15 @@
+services:
+  notediscovery:
+    image: ${IMAGE_NAME:-tester-env-notediscovery:dev}
+    container_name: tester-env-notediscovery${RUN_SUFFIX:-}
+    network_mode: host
+    ports: !reset []
+    environment:
+      PORT: ${HOST_PORT:-8115}
+    volumes:
+      - notediscovery-data:/app/data
+    restart: "no"
+
+volumes:
+  notediscovery-data:
+    name: notediscovery-data${RUN_SUFFIX:-}
