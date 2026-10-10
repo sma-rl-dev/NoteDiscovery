@@ -14,7 +14,7 @@ The Atlas knowledge-base launch is scheduled for **2026-09-15**.
 - [ ] Publish [[Operations/Release-Checklist]]
 
 See also the [Release Checklist](../Operations/Release-Checklist.md) and the
-[release notes draft](../Operations/Release%20Notes%20Draft.md).
+[release notes draft](/Operations/Release%20Notes%20Draft.md).
 
 ## Task syntax example
 

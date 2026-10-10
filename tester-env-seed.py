@@ -25,7 +25,7 @@ EXPECTED = {
         "#launch",
         "Maya Chen",
         "[Release Checklist](../Operations/Release-Checklist.md)",
-        "[release notes draft](../Operations/Release%20Notes%20Draft.md)",
+        "[release notes draft](/Operations/Release%20Notes%20Draft.md)",
         "- [ ] example task written as source text",
         "> [!TIP]",
         "![[pixel.png]]",
